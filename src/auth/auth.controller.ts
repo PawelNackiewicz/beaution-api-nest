@@ -39,4 +39,11 @@ export class AuthController {
   async getProfile(@Req() req: Request) {
     return await this.authService.getUserInfo(req.cookies.token);
   }
+
+  @Post('/forgotPassword')
+  async forgotPassword(
+    @Body(new ValidationPipe()) forgotPasswordDto: ForgotPasswordDto,
+  ): Promise<void> {
+    return this.authService.forgotPassword(forgotPasswordDto);
+  }
 }

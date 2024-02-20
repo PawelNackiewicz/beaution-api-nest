@@ -1,16 +1,31 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { LoginDto } from './dto/login.dto';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import {
+  LoginDto,
+  ChangePasswordDto,
+  ConfirmAccountDto,
+  ForgotPasswordDto,
+} from './dto';
 import * as bcrypt from 'bcrypt';
 import { TokenService } from 'src/token/token.service';
 import { UserService } from 'src/user/user.service';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
+import { ConfigService } from 'src/config/config.service';
 
 @Injectable()
 export class AuthService {
+  private readonly clientAppUrl: string;
+
   constructor(
     private userService: UserService,
     private tokenService: TokenService,
-  ) {}
+    private configService: ConfigService,
+  ) {
+    this.clientAppUrl = this.configService.get('CLIENT_URL');
+  }
   // ✅
   async login({ login, password }: LoginDto) {
     const user = await this.userService.findUserByLogin(login);
@@ -34,54 +49,46 @@ export class AuthService {
   //   await this.mailService.sendConfirmationMail(user, confirmLink);
   // }
 
-  //   async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<void> {
-  //     const user = await this.userService.findByEmail(forgotPasswordDto.email);
-  //     if (!user) return;
-  //     const token = await this.tokenService.getActivationToken(user.email);
-  //     const forgotLink = `${this.clientAppUrl}/auth/resetPassword?token=${token}`;
-  //     await this.mailService.sendForgotPasswordMail(user, forgotLink);
-  //   }
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<void> {
+    const user = await this.userService.findUserByLogin(
+      forgotPasswordDto.email,
+    );
+    if (!user) return;
+    // const token = await this.tokenService.getActivationToken(
+    //   user.id.toString(),
+    //   user.login,
+    // );
+    // const forgotLink = `${this.clientAppUrl}/auth/resetPassword?token=${token}`;
+    // await this.mailService.sendForgotPasswordMail(user, forgotLink);
+  }
 
-  //   async changePassword(
-  //     userId: string,
-  //     changePasswordDto: ChangePasswordDto,
-  //   ): Promise<boolean> {
-  //     const password = await this.userService.hashPassword(
-  //       changePasswordDto.password,
-  //     );
+  async changePassword(
+    userId: string,
+    changePasswordDto: ChangePasswordDto,
+  ): Promise<boolean> {
+    const password = await this.userService.hashPassword(
+      changePasswordDto.password,
+    );
 
-  //     await this.userService.update(userId, { password });
-  //     await this.tokenService.deleteAll(userId);
-  //     return true;
-  //   }
+    await this.userService.updateUser({
+      data: { password },
+      where: { id: parseInt(userId) },
+    });
+    await this.tokenService.deleteAll(parseInt(userId));
+    return true;
+  }
 
-  //   async changePasswordByToken(
-  //     changePasswordDto: ChangePasswordDto,
-  //   ): Promise<boolean> {
-  //     const password = await this.userService.hashPassword(
-  //       changePasswordDto.password,
-  //     );
-  //     const data = (await this.tokenService.verifyActivationToken(
-  //       AuthService.parseToken(changePasswordDto.token),
-  //     )) as ITokenPayload;
-  //     const user = await this.userService.findByEmail(data.userEmail);
-  //     console.log(user);
-
-  //     await this.userService.update(user._id, { password });
-  //     await this.tokenService.deleteAll(user._id);
-  //     return true;
-  //   }
-
-  //   async confirmUser({ token }: ConfirmAccountDto) {
-  //     const data = await this.tokenService.verifyActivationToken(token);
-  //     const user = await this.userService.findUserByLogin(data.userEmail);
-
-  //     if (user && user.status === statusEnum.pending) {
-  //       user.status = statusEnum.active;
-  //       return user.save();
-  //     }
-  //     throw new NotFoundException('Confirmation error');
-  //   }
+  async confirmUser({ token }: ConfirmAccountDto) {
+    const userId = await this.tokenService.verifyActivationToken(token);
+    const user = await this.userService.findUserById(userId);
+    if (user && user.status === 'PENDING') {
+      return this.userService.updateUser({
+        data: { status: 'ACTIVE' },
+        where: { id: userId },
+      });
+    }
+    throw new NotFoundException('Confirmation error');
+  }
   // ✅
   async getUserInfo(token: string) {
     const userId = await this.tokenService.getUserId(

@@ -34,28 +34,37 @@ export class TokenService {
     return token;
   }
 
-  async verifyActivationToken(token: string) {
-    //to implement
-    return token;
+  async getActivationToken(userId: string, userEmail: string): Promise<string> {
+    return await this.jwtService.signAsync(
+      { sub: userId, email: userEmail },
+      { expiresIn: '4h' },
+    );
+  }
+
+  async verifyActivationToken(token: string): Promise<number> {
+    try {
+      const decoded = this.jwtService.verify(token);
+      return decoded.sub;
+    } catch (e) {
+      throw new UnauthorizedException('Invalid token');
+    }
   }
 
   // ✅
   async delete(userId: User['id'], token: string) {
     try {
-      await this.prisma.token.delete({ where: { userId, token } });
-      return true;
+      return await this.prisma.token.delete({ where: { userId, token } });
     } catch (e) {
-      return false;
+      throw new NotFoundException('Token not found');
     }
   }
 
   // ✅
   async deleteAll(userId: User['id']) {
     try {
-      await this.prisma.token.deleteMany({ where: { userId } });
-      return true;
+      return await this.prisma.token.deleteMany({ where: { userId } });
     } catch (e) {
-      return false;
+      throw new NotFoundException('Token not found');
     }
   }
 
