@@ -11,7 +11,7 @@ export class AuthService {
     private userService: UserService,
     private tokenService: TokenService,
   ) {}
-
+  // ✅
   async login({ login, password }: LoginDto) {
     const user = await this.userService.findUserByLogin(login);
     const correctCredentials =
@@ -22,7 +22,7 @@ export class AuthService {
     }
     throw new UnauthorizedException('Invalid credentials');
   }
-
+  // ✅
   async register(createUserDto: CreateUserDto) {
     return await this.userService.createUser(createUserDto);
     // await this.prepareConfirmation(user);
@@ -82,14 +82,14 @@ export class AuthService {
   //     }
   //     throw new NotFoundException('Confirmation error');
   //   }
-
+  // ✅
   async getUserInfo(token: string) {
     const userId = await this.tokenService.getUserId(
       AuthService.parseToken(token),
     );
     return await this.userService.findUserById(userId);
   }
-
+  // ✅
   private static parseToken(token: string) {
     const prefix = 'token=';
     if (token.includes(prefix)) return token.split(prefix).pop();
