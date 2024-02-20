@@ -28,11 +28,11 @@ export class AuthService {
     // await this.prepareConfirmation(user);
   }
 
-  //   async prepareConfirmation(userEmail: string): Promise<void> {
-  //     const token = await this.tokenService.getActivationToken(userEmail);
-  //     const confirmLink = `${this.clientAppUrl}/auth/confirm?token=${token}`;
-  //     await this.mailService.sendConfirmationMail(user, confirmLink);
-  //   }
+  // async prepareConfirmation(userEmail: string): Promise<void> {
+  //   const token = await this.tokenService.getActivationToken(userEmail);
+  //   const confirmLink = `${this.clientAppUrl}/auth/confirm?token=${token}`;
+  //   await this.mailService.sendConfirmationMail(user, confirmLink);
+  // }
 
   //   async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<void> {
   //     const user = await this.userService.findByEmail(forgotPasswordDto.email);
@@ -72,11 +72,9 @@ export class AuthService {
   //     return true;
   //   }
 
-  //   async confirmUser({ token }: ConfirmAccountDto): Promise<IUser> {
-  //     const data = (await this.tokenService.verifyActivationToken(
-  //       token,
-  //     )) as ITokenPayload;
-  //     const user = await this.userService.findByEmail(data.userEmail);
+  //   async confirmUser({ token }: ConfirmAccountDto) {
+  //     const data = await this.tokenService.verifyActivationToken(token);
+  //     const user = await this.userService.findUserByLogin(data.userEmail);
 
   //     if (user && user.status === statusEnum.pending) {
   //       user.status = statusEnum.active;

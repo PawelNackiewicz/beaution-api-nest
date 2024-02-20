@@ -19,12 +19,12 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly cookieService: CookieService,
   ) {}
-
+  // ✅
   @Post('users')
   async registration(@Body(new ValidationPipe()) createUserDto: CreateUserDto) {
     return this.authService.register(createUserDto);
   }
-
+  // ✅
   @Post('sessions')
   async login(
     @Res({ passthrough: true }) res: Response,
@@ -34,7 +34,7 @@ export class AuthController {
     this.cookieService.setTokenInCookies(res, accessToken);
     return accessToken;
   }
-
+  // ✅
   @Get('sessions/me')
   async getProfile(@Req() req: Request) {
     return await this.authService.getUserInfo(req.cookies.token);
