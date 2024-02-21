@@ -6,12 +6,19 @@ import {
   Req,
   Get,
   Res,
+  Query,
+  Patch,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CookieService } from 'src/cookie/cookie.service';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { Request, Response } from 'express';
-import { ForgotPasswordDto, LoginDto } from './dto';
+import {
+  ChangePasswordDto,
+  ConfirmAccountDto,
+  ForgotPasswordDto,
+  LoginDto,
+} from './dto';
 
 @Controller('auth')
 export class AuthController {
@@ -43,7 +50,19 @@ export class AuthController {
   @Post('/forgotPassword')
   async forgotPassword(
     @Body(new ValidationPipe()) forgotPasswordDto: ForgotPasswordDto,
-  ): Promise<void> {
+  ) {
     return this.authService.forgotPassword(forgotPasswordDto);
+  }
+
+  @Get('/confirm')
+  async confirm(@Query(new ValidationPipe()) query: ConfirmAccountDto) {
+    return await this.authService.confirmUser(query);
+  }
+
+  @Patch('/changePassword')
+  async changePassword(
+    @Body(new ValidationPipe()) changePasswordDto: ChangePasswordDto,
+  ) {
+    return this.authService.changePasswordByToken(changePasswordDto);
   }
 }

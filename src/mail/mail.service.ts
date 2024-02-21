@@ -42,7 +42,7 @@ export class MailService {
   }
 
   async sendConfirmationMail(
-    user: Pick<User, 'login' | 'id' | 'status' | 'firstName'>,
+    user: Pick<User, 'id' | 'login' | 'status' | 'firstName' | 'lastName'>,
     confirmLink: string,
   ) {
     await this.sendMail({

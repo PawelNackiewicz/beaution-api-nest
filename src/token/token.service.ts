@@ -41,10 +41,12 @@ export class TokenService {
     );
   }
 
-  async verifyActivationToken(token: string): Promise<number> {
+  async verifyActivationToken(
+    token: string,
+  ): Promise<{ userId: number; email: string }> {
     try {
       const decoded = this.jwtService.verify(token);
-      return decoded.sub;
+      return { userId: parseInt(decoded.sub), email: decoded.email };
     } catch (e) {
       throw new UnauthorizedException('Invalid token');
     }

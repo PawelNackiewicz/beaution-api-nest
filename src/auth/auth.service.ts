@@ -47,7 +47,7 @@ export class AuthService {
   }
 
   async prepareConfirmation(
-    user: Pick<User, 'id' | 'login' | 'status' | 'firstName'>,
+    user: Pick<User, 'id' | 'login' | 'status' | 'firstName' | 'lastName'>,
   ): Promise<void> {
     const token = await this.tokenService.getActivationToken(
       user.id.toString(),
@@ -70,10 +70,7 @@ export class AuthService {
     await this.mailService.sendForgotPasswordMail(user, forgotLink);
   }
 
-  async changePassword(
-    userId: string,
-    changePasswordDto: ChangePasswordDto,
-  ): Promise<boolean> {
+  async changePassword(userId: string, changePasswordDto: ChangePasswordDto) {
     const password = await this.userService.hashPassword(
       changePasswordDto.password,
     );
@@ -83,11 +80,26 @@ export class AuthService {
       where: { id: parseInt(userId) },
     });
     await this.tokenService.deleteAll(parseInt(userId));
-    return true;
+  }
+
+  async changePasswordByToken(changePasswordDto: ChangePasswordDto) {
+    const password = await this.userService.hashPassword(
+      changePasswordDto.password,
+    );
+    const data = await this.tokenService.verifyActivationToken(
+      AuthService.parseToken(changePasswordDto.token),
+    );
+    const user = await this.userService.findUserByLogin(data.email);
+
+    await this.userService.updateUser({
+      data: { password },
+      where: { id: user.id },
+    });
+    await this.tokenService.deleteAll(user.id);
   }
 
   async confirmUser({ token }: ConfirmAccountDto) {
-    const userId = await this.tokenService.verifyActivationToken(token);
+    const { userId } = await this.tokenService.verifyActivationToken(token);
     const user = await this.userService.findUserById(userId);
     if (user && user.status === 'PENDING') {
       return this.userService.updateUser({
