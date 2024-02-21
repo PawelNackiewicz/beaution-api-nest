@@ -1,17 +1,35 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { LoginDto } from './dto/login.dto';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import {
+  LoginDto,
+  ChangePasswordDto,
+  ConfirmAccountDto,
+  ForgotPasswordDto,
+} from './dto';
 import * as bcrypt from 'bcrypt';
 import { TokenService } from 'src/token/token.service';
 import { UserService } from 'src/user/user.service';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
+import { ConfigService } from 'src/config/config.service';
+import { MailService } from 'src/mail/mail.service';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
+  private readonly clientAppUrl: string;
+
   constructor(
     private userService: UserService,
     private tokenService: TokenService,
-  ) {}
-
+    private configService: ConfigService,
+    private mailService: MailService,
+  ) {
+    this.clientAppUrl = this.configService.get('CLIENT_URL');
+  }
+  // ✅
   async login({ login, password }: LoginDto) {
     const user = await this.userService.findUserByLogin(login);
     const correctCredentials =
@@ -22,76 +40,83 @@ export class AuthService {
     }
     throw new UnauthorizedException('Invalid credentials');
   }
-
+  // ✅
   async register(createUserDto: CreateUserDto) {
-    return await this.userService.createUser(createUserDto);
-    // await this.prepareConfirmation(user);
+    const user = await this.userService.createUser(createUserDto);
+    await this.prepareConfirmation(user);
   }
 
-  //   async prepareConfirmation(userEmail: string): Promise<void> {
-  //     const token = await this.tokenService.getActivationToken(userEmail);
-  //     const confirmLink = `${this.clientAppUrl}/auth/confirm?token=${token}`;
-  //     await this.mailService.sendConfirmationMail(user, confirmLink);
-  //   }
+  async prepareConfirmation(
+    user: Pick<User, 'id' | 'login' | 'status' | 'firstName' | 'lastName'>,
+  ): Promise<void> {
+    const token = await this.tokenService.getActivationToken(
+      user.id.toString(),
+      user.login,
+    );
+    const confirmLink = `${this.clientAppUrl}/auth/confirm?token=${token}`;
+    await this.mailService.sendConfirmationMail(user, confirmLink);
+  }
 
-  //   async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<void> {
-  //     const user = await this.userService.findByEmail(forgotPasswordDto.email);
-  //     if (!user) return;
-  //     const token = await this.tokenService.getActivationToken(user.email);
-  //     const forgotLink = `${this.clientAppUrl}/auth/resetPassword?token=${token}`;
-  //     await this.mailService.sendForgotPasswordMail(user, forgotLink);
-  //   }
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<void> {
+    const user = await this.userService.findUserByLogin(
+      forgotPasswordDto.email,
+    );
+    if (!user) return;
+    const token = await this.tokenService.getActivationToken(
+      user.id.toString(),
+      user.login,
+    );
+    const forgotLink = `${this.clientAppUrl}/auth/resetPassword?token=${token}`;
+    await this.mailService.sendForgotPasswordMail(user, forgotLink);
+  }
 
-  //   async changePassword(
-  //     userId: string,
-  //     changePasswordDto: ChangePasswordDto,
-  //   ): Promise<boolean> {
-  //     const password = await this.userService.hashPassword(
-  //       changePasswordDto.password,
-  //     );
+  async changePassword(userId: string, changePasswordDto: ChangePasswordDto) {
+    const password = await this.userService.hashPassword(
+      changePasswordDto.password,
+    );
 
-  //     await this.userService.update(userId, { password });
-  //     await this.tokenService.deleteAll(userId);
-  //     return true;
-  //   }
+    await this.userService.updateUser({
+      data: { password },
+      where: { id: parseInt(userId) },
+    });
+    await this.tokenService.deleteAll(parseInt(userId));
+  }
 
-  //   async changePasswordByToken(
-  //     changePasswordDto: ChangePasswordDto,
-  //   ): Promise<boolean> {
-  //     const password = await this.userService.hashPassword(
-  //       changePasswordDto.password,
-  //     );
-  //     const data = (await this.tokenService.verifyActivationToken(
-  //       AuthService.parseToken(changePasswordDto.token),
-  //     )) as ITokenPayload;
-  //     const user = await this.userService.findByEmail(data.userEmail);
-  //     console.log(user);
+  async changePasswordByToken(changePasswordDto: ChangePasswordDto) {
+    const password = await this.userService.hashPassword(
+      changePasswordDto.password,
+    );
+    const data = await this.tokenService.verifyActivationToken(
+      AuthService.parseToken(changePasswordDto.token),
+    );
+    const user = await this.userService.findUserByLogin(data.email);
 
-  //     await this.userService.update(user._id, { password });
-  //     await this.tokenService.deleteAll(user._id);
-  //     return true;
-  //   }
+    await this.userService.updateUser({
+      data: { password },
+      where: { id: user.id },
+    });
+    await this.tokenService.deleteAll(user.id);
+  }
 
-  //   async confirmUser({ token }: ConfirmAccountDto): Promise<IUser> {
-  //     const data = (await this.tokenService.verifyActivationToken(
-  //       token,
-  //     )) as ITokenPayload;
-  //     const user = await this.userService.findByEmail(data.userEmail);
-
-  //     if (user && user.status === statusEnum.pending) {
-  //       user.status = statusEnum.active;
-  //       return user.save();
-  //     }
-  //     throw new NotFoundException('Confirmation error');
-  //   }
-
+  async confirmUser({ token }: ConfirmAccountDto) {
+    const { userId } = await this.tokenService.verifyActivationToken(token);
+    const user = await this.userService.findUserById(userId);
+    if (user && user.status === 'PENDING') {
+      return this.userService.updateUser({
+        data: { status: 'ACTIVE' },
+        where: { id: userId },
+      });
+    }
+    throw new NotFoundException('Confirmation error');
+  }
+  // ✅
   async getUserInfo(token: string) {
     const userId = await this.tokenService.getUserId(
       AuthService.parseToken(token),
     );
     return await this.userService.findUserById(userId);
   }
-
+  // ✅
   private static parseToken(token: string) {
     const prefix = 'token=';
     if (token.includes(prefix)) return token.split(prefix).pop();

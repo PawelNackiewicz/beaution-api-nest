@@ -37,6 +37,7 @@ enum Role {
 enum Status {
   ACTIVE
   BLOCKED
+  PENDING
 }
 
 model Customer {
@@ -86,13 +87,13 @@ model Visit {
   customer    Customer    @relation(references: [id], fields: [customerId])
   product     Product     @relation(references: [id], fields: [productId])
   scheduledBy User        @relation(name: "UserScheduledVisits", references: [id], fields: [userId], map: "ScheduledVisit_userId")
-  executor    User        @relation(name: "UserVisits", references: [id], fields: [userId], map: "Visit_userId")
+  executor    User        @relation(name: "UserVisits", references: [id], fields: [userId], map: "VisitExecutor_userId")
   data        DateTime
   status      VisitStatus @default(BEFORE_APPLICATION)
   notes       String?
-  customerId  Int         @unique
-  productId   Int         @unique
-  userId      Int         @unique
+  customerId  Int
+  productId   Int
+  userId      Int
 }
 
 enum VisitStatus {

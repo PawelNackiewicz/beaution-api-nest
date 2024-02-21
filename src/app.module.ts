@@ -6,6 +6,7 @@ import { UserModule } from './user/user.module';
 import { ConfigModule } from './config/config.module';
 import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { AuthModule } from './auth/auth.module';
     TokenModule,
     CookieModule,
     UserModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [PrismaService],

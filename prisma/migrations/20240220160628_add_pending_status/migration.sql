@@ -2,7 +2,7 @@
 CREATE TYPE "Role" AS ENUM ('USER', 'ADMIN');
 
 -- CreateEnum
-CREATE TYPE "Status" AS ENUM ('ACTIVE', 'BLOCKED');
+CREATE TYPE "Status" AS ENUM ('ACTIVE', 'BLOCKED', 'PENDING');
 
 -- CreateEnum
 CREATE TYPE "Gender" AS ENUM ('MALE', 'FEMALE');
@@ -93,15 +93,6 @@ CREATE UNIQUE INDEX "User_login_key" ON "User"("login");
 -- CreateIndex
 CREATE UNIQUE INDEX "Token_token_key" ON "Token"("token");
 
--- CreateIndex
-CREATE UNIQUE INDEX "Visit_customerId_key" ON "Visit"("customerId");
-
--- CreateIndex
-CREATE UNIQUE INDEX "Visit_productId_key" ON "Visit"("productId");
-
--- CreateIndex
-CREATE UNIQUE INDEX "Visit_userId_key" ON "Visit"("userId");
-
 -- AddForeignKey
 ALTER TABLE "Visit" ADD CONSTRAINT "Visit_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "Customer"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
@@ -112,4 +103,4 @@ ALTER TABLE "Visit" ADD CONSTRAINT "Visit_productId_fkey" FOREIGN KEY ("productI
 ALTER TABLE "Visit" ADD CONSTRAINT "ScheduledVisit_userId" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Visit" ADD CONSTRAINT "Visit_userId" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Visit" ADD CONSTRAINT "VisitExecutor_userId" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

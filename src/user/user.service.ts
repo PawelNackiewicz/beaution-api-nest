@@ -56,6 +56,7 @@ export class UserService {
       const user = await this.prisma.user.create({
         data: {
           ...data,
+          status: 'PENDING',
           password: hash,
         },
       });
@@ -63,6 +64,8 @@ export class UserService {
         id: user.id,
         login: user.login,
         status: user.status,
+        firstName: user.firstName,
+        lastName: user.lastName,
       };
     } catch (e) {
       throw new Error('User not created');
@@ -74,10 +77,17 @@ export class UserService {
     data: Prisma.UserUpdateInput;
   }) {
     const { where, data } = params;
-    return this.prisma.user.update({
+    const user = await this.prisma.user.update({
       data,
       where,
     });
+    return {
+      id: user.id,
+      login: user.login,
+      status: user.status,
+      firstName: user.firstName,
+      lastName: user.lastName,
+    };
   }
 
   async deleteUser(where: Prisma.UserWhereUniqueInput) {
