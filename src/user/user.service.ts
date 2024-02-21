@@ -63,6 +63,7 @@ export class UserService {
         id: user.id,
         login: user.login,
         status: user.status,
+        firstName: user.firstName,
       };
     } catch (e) {
       throw new Error('User not created');

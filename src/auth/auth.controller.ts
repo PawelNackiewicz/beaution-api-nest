@@ -11,7 +11,7 @@ import { AuthService } from './auth.service';
 import { CookieService } from 'src/cookie/cookie.service';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { Request, Response } from 'express';
-import { LoginDto } from './dto/login.dto';
+import { ForgotPasswordDto, LoginDto } from './dto';
 
 @Controller('auth')
 export class AuthController {

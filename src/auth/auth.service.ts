@@ -14,6 +14,8 @@ import { TokenService } from 'src/token/token.service';
 import { UserService } from 'src/user/user.service';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { ConfigService } from 'src/config/config.service';
+import { MailService } from 'src/mail/mail.service';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -23,6 +25,7 @@ export class AuthService {
     private userService: UserService,
     private tokenService: TokenService,
     private configService: ConfigService,
+    private mailService: MailService,
   ) {
     this.clientAppUrl = this.configService.get('CLIENT_URL');
   }
@@ -39,27 +42,32 @@ export class AuthService {
   }
   // ✅
   async register(createUserDto: CreateUserDto) {
-    return await this.userService.createUser(createUserDto);
-    // await this.prepareConfirmation(user);
+    const user = await this.userService.createUser(createUserDto);
+    await this.prepareConfirmation(user);
   }
 
-  // async prepareConfirmation(userEmail: string): Promise<void> {
-  //   const token = await this.tokenService.getActivationToken(userEmail);
-  //   const confirmLink = `${this.clientAppUrl}/auth/confirm?token=${token}`;
-  //   await this.mailService.sendConfirmationMail(user, confirmLink);
-  // }
+  async prepareConfirmation(
+    user: Pick<User, 'id' | 'login' | 'status' | 'firstName'>,
+  ): Promise<void> {
+    const token = await this.tokenService.getActivationToken(
+      user.id.toString(),
+      user.login,
+    );
+    const confirmLink = `${this.clientAppUrl}/auth/confirm?token=${token}`;
+    await this.mailService.sendConfirmationMail(user, confirmLink);
+  }
 
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<void> {
     const user = await this.userService.findUserByLogin(
       forgotPasswordDto.email,
     );
     if (!user) return;
-    // const token = await this.tokenService.getActivationToken(
-    //   user.id.toString(),
-    //   user.login,
-    // );
-    // const forgotLink = `${this.clientAppUrl}/auth/resetPassword?token=${token}`;
-    // await this.mailService.sendForgotPasswordMail(user, forgotLink);
+    const token = await this.tokenService.getActivationToken(
+      user.id.toString(),
+      user.login,
+    );
+    const forgotLink = `${this.clientAppUrl}/auth/resetPassword?token=${token}`;
+    await this.mailService.sendForgotPasswordMail(user, forgotLink);
   }
 
   async changePassword(
