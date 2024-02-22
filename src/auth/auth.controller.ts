@@ -33,6 +33,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Create user' })
   @ApiResponse({ status: 201, description: 'User created successfully' })
   @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 409, description: 'Conflict' })
   async registration(@Body(new ValidationPipe()) createUserDto: CreateUserDto) {
     return this.authService.register(createUserDto);
   }
@@ -40,7 +41,8 @@ export class AuthController {
   @Post('sessions')
   @ApiOperation({ summary: 'User login' })
   @ApiResponse({ status: 200, description: 'Login successful' })
-  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
   async login(
     @Res({ passthrough: true }) res: Response,
     @Body(new ValidationPipe()) loginDto: LoginDto,
@@ -57,11 +59,12 @@ export class AuthController {
     description: 'User profile retrieved successfully',
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
   async getProfile(@Req() req: Request) {
     return await this.authService.getUserInfo(req.cookies.token);
   }
 
-  @Post('/forgotPassword')
+  @Post('users/password/reset')
   @ApiOperation({ summary: 'Forgot password' })
   @ApiResponse({ status: 200, description: 'Password reset email sent' })
   @ApiResponse({ status: 400, description: 'Bad request' })
@@ -71,7 +74,7 @@ export class AuthController {
     return this.authService.forgotPassword(forgotPasswordDto);
   }
 
-  @Get('/confirm')
+  @Get('users/confirm')
   @ApiOperation({ summary: 'Confirm account' })
   @ApiResponse({ status: 200, description: 'Account confirmed successfully' })
   @ApiResponse({ status: 400, description: 'Bad request' })
@@ -79,10 +82,11 @@ export class AuthController {
     return await this.authService.confirmUser(query);
   }
 
-  @Patch('/changePassword')
+  @Patch('users/:userId/password')
   @ApiOperation({ summary: 'Change password' })
   @ApiResponse({ status: 200, description: 'Password changed successfully' })
   @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async changePassword(
     @Body(new ValidationPipe()) changePasswordDto: ChangePasswordDto,
   ) {
