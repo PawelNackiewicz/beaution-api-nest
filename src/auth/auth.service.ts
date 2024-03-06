@@ -114,12 +114,19 @@ export class AuthService {
     const userId = await this.tokenService.getUserId(
       AuthService.parseToken(token),
     );
-    return await this.userService.findUserById(userId);
+    const user = await this.userService.findUserById(userId);
+    return this.sanitizeUser(user);
   }
   // ✅
   private static parseToken(token: string) {
     const prefix = 'token=';
     if (token.includes(prefix)) return token.split(prefix).pop();
     return token;
+  }
+
+  sanitizeUser(user: User) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, ...sanitizedUser } = user;
+    return sanitizedUser;
   }
 }

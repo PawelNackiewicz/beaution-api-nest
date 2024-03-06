@@ -14,10 +14,9 @@ export class UserService {
 
   async getUser(userWhereUniqueInput: Prisma.UserWhereUniqueInput) {
     try {
-      const user = await this.prisma.user.findUnique({
+      return await this.prisma.user.findUnique({
         where: userWhereUniqueInput,
       });
-      return this.sanitizeUser(user);
     } catch (e) {
       throw new Error('User not found');
     }
@@ -32,14 +31,13 @@ export class UserService {
   }) {
     try {
       const { skip, take, cursor, where, orderBy } = params;
-      const users = await this.prisma.user.findMany({
+      return await this.prisma.user.findMany({
         skip,
         take,
         cursor,
         where,
         orderBy,
       });
-      return users.map((user) => this.sanitizeUser(user));
     } catch (e) {
       throw new Error('Users not found');
     }
@@ -47,24 +45,22 @@ export class UserService {
 
   async findUserById(id: User['id']) {
     try {
-      const user = await this.prisma.user.findUnique({
+      return await this.prisma.user.findUnique({
         where: {
           id,
         },
       });
-      return this.sanitizeUser(user);
     } catch (e) {
       throw new Error('User not found');
     }
   }
   async findUserByLogin(login: string) {
     try {
-      const user = await this.prisma.user.findUnique({
+      return await this.prisma.user.findUnique({
         where: {
           login,
         },
       });
-      return this.sanitizeUser(user);
     } catch (e) {
       throw new Error('User not found');
     }
@@ -73,14 +69,13 @@ export class UserService {
   async createUser(data: Prisma.UserCreateInput) {
     const hash = await this.hashPassword(data.password);
     try {
-      const user = await this.prisma.user.create({
+      return await this.prisma.user.create({
         data: {
           ...data,
           status: 'PENDING',
           password: hash,
         },
       });
-      return this.sanitizeUser(user);
     } catch (e) {
       throw new Error('User not created');
     }
@@ -92,11 +87,10 @@ export class UserService {
   }) {
     try {
       const { where, data } = params;
-      const user = await this.prisma.user.update({
+      return await this.prisma.user.update({
         data,
         where,
       });
-      return this.sanitizeUser(user);
     } catch (e) {
       throw new Error('User not updated');
     }
@@ -110,11 +104,5 @@ export class UserService {
     } catch (e) {
       throw new Error('User not deleted');
     }
-  }
-
-  sanitizeUser(user: User) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, ...sanitizedUser } = user;
-    return sanitizedUser;
   }
 }
