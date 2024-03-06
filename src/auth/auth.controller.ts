@@ -52,6 +52,15 @@ export class AuthController {
     return accessToken;
   }
 
+  @Post('logout')
+  @ApiOperation({ summary: 'User logout' })
+  @ApiResponse({ status: 200, description: 'Logout successful' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async logout(@Res({ passthrough: true }) res: Response) {
+    this.cookieService.clearTokenInCookies(res);
+    return { message: 'Logout successful' };
+  }
+
   @Get('sessions/me')
   @ApiOperation({ summary: 'Get user profile' })
   @ApiResponse({
