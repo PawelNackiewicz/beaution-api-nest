@@ -120,8 +120,12 @@ export class AuthService {
   // ✅
   private static parseToken(token: string) {
     const prefix = 'token=';
-    if (token.includes(prefix)) return token.split(prefix).pop();
-    return token;
+    try {
+      if (token.includes(prefix)) return token.split(prefix).pop();
+      return token;
+    } catch (e) {
+      throw new UnauthorizedException('Invalid token');
+    }
   }
 
   sanitizeUser(user: User) {
