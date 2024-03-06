@@ -13,9 +13,14 @@ export class UserService {
   }
 
   async getUser(userWhereUniqueInput: Prisma.UserWhereUniqueInput) {
-    return this.prisma.user.findUnique({
-      where: userWhereUniqueInput,
-    });
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: userWhereUniqueInput,
+      });
+      return this.sanitizeUser(user);
+    } catch (e) {
+      throw new Error('User not found');
+    }
   }
 
   async getUsers(params: {
@@ -25,29 +30,44 @@ export class UserService {
     where?: Prisma.UserWhereInput;
     orderBy?: Prisma.UserOrderByWithRelationInput;
   }) {
-    const { skip, take, cursor, where, orderBy } = params;
-    return this.prisma.user.findMany({
-      skip,
-      take,
-      cursor,
-      where,
-      orderBy,
-    });
+    try {
+      const { skip, take, cursor, where, orderBy } = params;
+      const users = await this.prisma.user.findMany({
+        skip,
+        take,
+        cursor,
+        where,
+        orderBy,
+      });
+      return users.map((user) => this.sanitizeUser(user));
+    } catch (e) {
+      throw new Error('Users not found');
+    }
   }
 
   async findUserById(id: User['id']) {
-    return this.prisma.user.findUnique({
-      where: {
-        id,
-      },
-    });
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: {
+          id,
+        },
+      });
+      return this.sanitizeUser(user);
+    } catch (e) {
+      throw new Error('User not found');
+    }
   }
   async findUserByLogin(login: string) {
-    return this.prisma.user.findUnique({
-      where: {
-        login,
-      },
-    });
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: {
+          login,
+        },
+      });
+      return this.sanitizeUser(user);
+    } catch (e) {
+      throw new Error('User not found');
+    }
   }
 
   async createUser(data: Prisma.UserCreateInput) {
@@ -60,13 +80,7 @@ export class UserService {
           password: hash,
         },
       });
-      return {
-        id: user.id,
-        login: user.login,
-        status: user.status,
-        firstName: user.firstName,
-        lastName: user.lastName,
-      };
+      return this.sanitizeUser(user);
     } catch (e) {
       throw new Error('User not created');
     }
@@ -76,23 +90,31 @@ export class UserService {
     where: Prisma.UserWhereUniqueInput;
     data: Prisma.UserUpdateInput;
   }) {
-    const { where, data } = params;
-    const user = await this.prisma.user.update({
-      data,
-      where,
-    });
-    return {
-      id: user.id,
-      login: user.login,
-      status: user.status,
-      firstName: user.firstName,
-      lastName: user.lastName,
-    };
+    try {
+      const { where, data } = params;
+      const user = await this.prisma.user.update({
+        data,
+        where,
+      });
+      return this.sanitizeUser(user);
+    } catch (e) {
+      throw new Error('User not updated');
+    }
   }
 
   async deleteUser(where: Prisma.UserWhereUniqueInput) {
-    return this.prisma.user.delete({
-      where,
-    });
+    try {
+      return this.prisma.user.delete({
+        where,
+      });
+    } catch (e) {
+      throw new Error('User not deleted');
+    }
+  }
+
+  sanitizeUser(user: User) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, ...sanitizedUser } = user;
+    return sanitizedUser;
   }
 }
