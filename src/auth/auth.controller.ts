@@ -8,6 +8,7 @@ import {
   Res,
   Query,
   Patch,
+  HttpCode,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CookieService } from 'src/cookie/cookie.service';
@@ -50,6 +51,16 @@ export class AuthController {
     const accessToken = await this.authService.login(loginDto);
     this.cookieService.setTokenInCookies(res, accessToken);
     return accessToken;
+  }
+
+  @Post('logout')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'User logout' })
+  @ApiResponse({ status: 200, description: 'Logout successful' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async logout(@Res({ passthrough: true }) res: Response) {
+    this.cookieService.clearTokenInCookies(res);
+    return { message: 'Logout successful' };
   }
 
   @Get('sessions/me')
